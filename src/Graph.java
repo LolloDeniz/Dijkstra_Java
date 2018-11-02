@@ -12,6 +12,8 @@ public class Graph {
 
     int n = 0;
     List<Node> nodes;
+
+    //init of random function
     Random random = new Random();
 
     public static void main(String args[]) {
@@ -19,20 +21,25 @@ public class Graph {
     }
 
     public Graph() {
-        
-        n = 0;
+
+        n = 0;  //progressive ID
 
         long tic, toc;
+
+        //generation of nodes
+        //for ensuring the complete connection of the graph, the nodes are a tree
         nodes = generateNodes();
 
+        //random generation of edges
         generateEdges();
 
         tic = currentTimeMillis();
 
+        //let's find the way!
         dijkstra(random.nextInt(N_NODES), random.nextInt(N_NODES));
 
         toc = currentTimeMillis();
-
+        //diagnostics tests
         testEdges();
         System.out.println("Elapsed time: " + (int) (toc - tic));
     }
@@ -95,6 +102,9 @@ public class Graph {
 
     private void generateEdges() {
 
+        //  |
+        // \|/ I have to subtract the number of already existing edges (equals to number of nodes)
+
         for (int i = N_NODES; i < N_EDGES; i++) {
             int ID1 = (random.nextInt(N_NODES));
             int ID2;
@@ -111,6 +121,7 @@ public class Graph {
 
     private void dijkstra(int startID, int endID) {
 
+        //init heap-based priority queue
         PriorityQueue<Node> PQ = new PriorityQueue<>(N_NODES, Comparator.comparing(Node::getDistance));
 
         Node v;
@@ -118,28 +129,34 @@ public class Graph {
         if (startID < 0 || startID >= N_NODES) return;
         if (endID < 0 || endID >= N_NODES) return;
 
+        //initial insertion of nodes in PQ
         PQ.addAll(nodes);
+        //initial value of distance is INT_MAX
 
+        //init of parent array
         int[] st = new int[N_NODES];
         for (int i = 0; i < N_NODES; i++) {
             st[i] = -1;
         }
 
+        //the distance from himself is 0
         nodes.get(startID).setDistance(0);
+        //the father of the first node is himself
         st[startID] = startID;
 
+        //update the priority queue with the distance value
         PQchange(PQ, nodes.get(startID));
 
         while (!PQ.isEmpty()) {
             if ((v = PQ.poll()).getDistance() != Integer.MAX_VALUE) {
-                for (Map.Entry<Node, Integer> set : v.getAdj().entrySet()) {
+                for (Map.Entry<Node, Integer> set : v.getAdj().entrySet()) { //for every edge of the node
                     Node nodeTo = set.getKey();
                     int nodeToDist = set.getValue();
 
-                    if (v.getDistance() + nodeToDist < nodeTo.getDistance()) {
-                        nodeTo.setDistance(v.getDistance() + nodeToDist);
-                        PQchange(PQ, nodeTo);
-                        st[nodeTo.getID()] = v.getID();
+                    if (v.getDistance() + nodeToDist < nodeTo.getDistance()) { //if the distance of the node + edge distance is less than distance of the connected node
+                        nodeTo.setDistance(v.getDistance() + nodeToDist); //the distance of the connected node is updated
+                        PQchange(PQ, nodeTo); //update of PQ
+                        st[nodeTo.getID()] = v.getID(); //update the father array
                     }
                 }
             }
