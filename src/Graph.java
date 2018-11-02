@@ -1,20 +1,23 @@
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 
 import static java.lang.System.currentTimeMillis;
 
 public class Graph {
 
-    final boolean VERBOSE = false;
-    final int N_NODES = 15000;
-    final double N_EDGES = 2.5 * N_NODES;
-    final int MAX_VALUE = 30;
-    final int STD_VALUE = MAX_VALUE / 2;
+    private final boolean VERBOSE = true;
+    private final int N_NODES = 15000;
+    private final double N_EDGES = 2.5 * N_NODES;
+    private final int MAX_VALUE = 30;
+    private final int STD_VALUE = MAX_VALUE / 2;
 
     int n = 0;
-    List<Node> nodes;
+    private List<Node> nodes;
 
     //init of random function
-    Random random = new Random();
+    private Random random = new Random();
 
     public static void main(String args[]) {
         Graph graph = new Graph();
@@ -22,16 +25,16 @@ public class Graph {
 
     public Graph() {
 
-        n = 0;  //progressive ID
-
         long tic, toc;
+
+        //createJSON("edges.json", N_NODES);
 
         //generation of nodes
         //for ensuring the complete connection of the graph, the nodes are a tree
-        nodes = generateNodes();
+        nodes = generateNodes(N_NODES);
 
         //random generation of edges
-        generateEdges();
+        generateEdges(nodes, N_NODES, (int)N_EDGES);
 
         tic = currentTimeMillis();
 
@@ -45,23 +48,23 @@ public class Graph {
     }
 
 
-    public List<Node> generateNodes() {
+    private List<Node> generateNodes(int n_nodes) {
 
         List<Node> nodes = new ArrayList<>();
-        int treeHeight = (int) Math.floor(Math.log(N_NODES) / Math.log(2));
+        int treeHeight = (int) Math.floor(Math.log(n_nodes) / Math.log(2));
 
         Node n = new Node(0);
 
         nodes.add(n);
 
-        _generateNodes(nodes, n, 1, treeHeight);
+        _generateNodes(nodes, n_nodes, n, 1, treeHeight);
 
         return nodes;
     }
 
-    private void _generateNodes(List<Node> nodes, Node current, int h, int treeHeight) {
+    private void _generateNodes(List<Node> nodes, int n_nodes, Node current, int h, int treeHeight) {
         //left
-        if (n < N_NODES - 1 && h <= treeHeight) {
+        if (n < n_nodes - 1 && h <= treeHeight) {
             n++;
 
             Node newNode = new Node(n);
@@ -72,15 +75,15 @@ public class Graph {
             newNode.addAdj(current, STD_VALUE);
 
             if (VERBOSE) {
-                for (int i = 0; i < h; i++) {
+                for (int i=0; i < h; i++) {
                     System.out.print("|\t");
                 }
                 System.out.print("left son of " + current.getID() + " created (ID=" + n + ")\n");
             }
-            _generateNodes(nodes, newNode, h + 1, treeHeight);
+            _generateNodes(nodes, n_nodes, newNode, h + 1, treeHeight);
         }
         //right
-        if (n < N_NODES - 1 && h <= treeHeight) {
+        if (n < n_nodes - 1 && h <= treeHeight) {
             n++;
 
             Node newNode = new Node(n);
@@ -96,19 +99,19 @@ public class Graph {
                 }
                 System.out.print("right son of " + current.getID() + " created (ID=" + n + ")\n");
             }
-            _generateNodes(nodes, newNode, h + 1, treeHeight);
+            _generateNodes(nodes, n_nodes, newNode, h + 1, treeHeight);
         }
     }
 
-    private void generateEdges() {
+    private void generateEdges(List<Node> nodes, int n_nodes, int n_edges) {
 
         //  |
         // \|/ I have to subtract the number of already existing edges (equals to number of nodes)
 
-        for (int i = N_NODES; i < N_EDGES; i++) {
-            int ID1 = (random.nextInt(N_NODES));
+        for (int i = n_nodes; i < n_edges; i++) {
+            int ID1 = (random.nextInt(n_nodes));
             int ID2;
-            while ((ID2 = (random.nextInt(N_NODES))) == ID1) ;
+            while ((ID2 = (random.nextInt(n_nodes))) == ID1) ;
             int value = random.nextInt(MAX_VALUE);
 
             Node n1 = nodes.get(ID1);
@@ -209,4 +212,53 @@ public class Graph {
 
     }
 
+    //create edges json
+    private int createJSON(String path, int n_nodes){
+        BufferedWriter bw=null;
+        try {
+            bw = new BufferedWriter(new FileWriter(path));
+        }
+        catch (IOException e){
+            e.printStackTrace();
+            return -1;
+        }
+
+
+        List<Node> nodes;
+        nodes=generateNodes(n_nodes);
+        generateEdges(nodes, n_nodes, (int)(n_nodes*2.5));
+
+
+        StringBuffer content=new StringBuffer();
+
+        content.append("[\n");
+
+        for(Node n: nodes){
+            for (Map.Entry<Node, Integer> e: n.getAdj().entrySet()){
+                content.append(" {\n");
+                content.append("  \"ID1\": "+n.getID()+",\n");
+                content.append("  \"ID2\": "+e.getKey().getID()+",\n");
+                content.append("  \"DISTANCE\": "+e.getValue()+"\n");
+                content.append(" },\n");
+            }
+        }
+
+        content.append("]\n");
+
+        try {
+            bw.write(content.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+            return -1;
+        }
+        finally {
+            try {
+                bw.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return 1;
+    }
 }
