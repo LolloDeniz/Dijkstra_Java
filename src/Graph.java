@@ -1,20 +1,14 @@
-import org.json.simple.parser.JSONParser;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.ParseException;
-
-import java.io.*;
 import java.util.*;
 
 import static java.lang.System.currentTimeMillis;
 
 public class Graph {
 
-    private final boolean VERBOSE = true;
-    private final int N_NODES = 15000;
-    private final double N_EDGES = 2.5 * N_NODES;
-    private final int MAX_VALUE = 30;
-    private final int STD_VALUE = MAX_VALUE / 2;
+    final boolean VERBOSE = false;
+    final int N_NODES = 15000;
+    final double N_EDGES = 2.5 * N_NODES;
+    final int MAX_VALUE = 30;
+    final int STD_VALUE = MAX_VALUE / 2;
 
     int n = 0;
     private List<Node> nodes;
@@ -30,9 +24,15 @@ public class Graph {
 
         long tic, toc;
 
-        //createJSON("edges.json", N_NODES);
+        //read-write JSON file
 
-        //nodes=readJSON("edges.json", N_NODES);
+        //JSON_IO.createJSON("edges.json",this);
+        //nodes=JSON_IO.readJSON("edges.json", N_NODES);
+        //int startID=8191;
+        //int endID=11548;
+        //start and end are the same of cpp version
+
+
         //generation of nodes
         //for ensuring the complete connection of the graph, the nodes are a tree
         nodes = generateNodes(N_NODES);
@@ -42,8 +42,11 @@ public class Graph {
 
         tic = currentTimeMillis();
 
+        int startID=random.nextInt(N_NODES);
+        int endID=random.nextInt(N_NODES);
+
         //let's find the way!
-        dijkstra(random.nextInt(N_NODES), random.nextInt(N_NODES));
+        dijkstra(startID, endID);
 
         toc = currentTimeMillis();
         //diagnostics tests
@@ -52,7 +55,7 @@ public class Graph {
     }
 
 
-    private List<Node> generateNodes(int n_nodes) {
+    List<Node> generateNodes(int n_nodes) {
 
         List<Node> nodes = new ArrayList<>();
         int treeHeight = (int) Math.floor(Math.log(n_nodes) / Math.log(2));
@@ -107,7 +110,7 @@ public class Graph {
         }
     }
 
-    private void generateEdges(List<Node> nodes, int n_nodes, int n_edges) {
+    void generateEdges(List<Node> nodes, int n_nodes, int n_edges) {
 
         //  |
         // \|/ I have to subtract the number of already existing edges (equals to number of nodes)
@@ -177,7 +180,7 @@ public class Graph {
             for (int i = 0; i < N_NODES; i++) {
                 System.out.println(i + " : " + nodes.get(i).getDistance() + " metres");
             }
-
+        }
             System.out.println("\n\nPath from " + startID + " to " + endID + ":");
             int j = endID;
             while (st[j] != j) {
@@ -186,11 +189,13 @@ public class Graph {
             }
             System.out.print(startID);
             System.out.println("\nWeight=" + nodes.get(endID).getDistance());
-        }
+
 
     }
 
     private void PQchange(PriorityQueue<Node> pq, Node n) {
+
+        //shortcut function for priority queue
         pq.remove(n);
         pq.add(n);
     }
@@ -213,91 +218,5 @@ public class Graph {
         System.out.println("\n\nNumber of nodes: " + N_NODES);
         System.out.println("Number of edges: " + ne / 2);
         System.out.println("Average edges per node: " + (ne / 2) / (float) N_NODES);
-
     }
-
-    //create edges json
-    private int createJSON(String path, int n_nodes){
-        BufferedWriter bw=null;
-        try {
-            bw = new BufferedWriter(new FileWriter(path));
-        }
-        catch (IOException e){
-            e.printStackTrace();
-            return -1;
-        }
-
-
-        List<Node> nodes;
-        nodes=generateNodes(n_nodes);
-        generateEdges(nodes, n_nodes, (int)(n_nodes*2.5));
-
-
-        StringBuffer content=new StringBuffer();
-
-        content.append("[\n");
-
-        for(Node n: nodes){
-            for (Map.Entry<Node, Integer> e: n.getAdj().entrySet()){
-                content.append(" {\n");
-                content.append("  \"ID1\": "+n.getID()+",\n");
-                content.append("  \"ID2\": "+e.getKey().getID()+",\n");
-                content.append("  \"DISTANCE\": "+e.getValue()+"\n");
-                content.append(" },\n");
-            }
-        }
-        content.deleteCharAt(content.length()-2);
-        content.append(" ]\n");
-
-        try {
-            bw.write(content.toString());
-        } catch (IOException e) {
-            e.printStackTrace();
-            return -1;
-        }
-        finally {
-            try {
-                bw.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        return 1;
     }
-
-    private List<Node> readJSON(String path, int n_nodes){
-
-        List<Node> nodes=new ArrayList<>();
-        for(int i=0; i<n_nodes;i++){
-            Node n= new Node(i);
-            nodes.add(n);
-        }
-
-        JSONParser parser=new JSONParser();
-        JSONArray a=null;
-        try {
-            a=(JSONArray) parser.parse(new FileReader(path));
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ParseException e) {
-            e.printStackTrace();
-            return null;
-        }
-
-        for(Object o: a){
-            JSONObject edge=(JSONObject)o;
-
-            int ID1= ((Long)(edge.get("ID1"))).intValue();
-            int ID2= ((Long)(edge.get("ID2"))).intValue();
-            int distance= ((Long)(edge.get("DISTANCE"))).intValue();
-
-            Node n1=nodes.get(ID1);
-            Node n2=nodes.get(ID2);
-
-            n1.addAdj(n2, distance);
-            n2.addAdj(n1, distance);
-        }
-        return nodes;
-    }
-}
