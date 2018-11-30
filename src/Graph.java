@@ -16,13 +16,14 @@ public class Graph {
     //init of random function
     private Random random = new Random();
 
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         Graph graph = new Graph();
     }
 
     public Graph() {
 
         long tic, toc;
+
 
         //read-write JSON file
 
@@ -113,9 +114,9 @@ public class Graph {
     void generateEdges(List<Node> nodes, int n_nodes, int n_edges) {
 
         //  |
-        // \|/ I have to subtract the number of already existing edges (equals to number of nodes)
+        // \|/ I have to subtract the number of already existing edges (equals to number of nodes - 1)
 
-        for (int i = n_nodes; i < n_edges; i++) {
+        for (int i = n_nodes-1; i < n_edges; i++) {
             int ID1 = (random.nextInt(n_nodes));
             int ID2;
             while ((ID2 = (random.nextInt(n_nodes))) == ID1) ;
